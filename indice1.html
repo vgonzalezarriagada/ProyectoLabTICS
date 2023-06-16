@@ -1,0 +1,114 @@
+Python 3.10.2 (tags/v3.10.2:a58ebcc, Jan 17 2022, 14:12:15) [MSC v.1929 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license()" for more information.
+<html>
+<head>
+    <title>Datos del sensor en tiempo real</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #f5f0ff, #8d13ebfb);
+            margin: 0;
+        }
+
+        #chart-container {
+            width: 80%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        #chart {
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Datos del sensor en tiempo real</h1>
+    <p id="estado-led">Estado LED: </p>
+    <img src="https://www.die.cl/sitio/wp-content/uploads/2019/10/cropped-logo-fcfm-die-1.png" style="position: absolute; top: 0; right: 0; width: 240px; height: auto;">
+    <div id="chart-container">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <script>
+        // referencia al elemento de lienzo (canvas) donde se dibujará el gráfico
+        const canvas = document.getElementById('chart');
+
+        // contexto de renderizado 2D para el lienzo
+        const ctx = canvas.getContext('2d');
+
+        // crea un nuevo gráfico utilizando Chart.js
+        const chart = new Chart(ctx, {
+            type: 'line', // tipo de gráfico (línea)
+            data: {
+                labels: [], // etiquetas de tiempo en el eje X (inicialmente vacías)
+                datasets: [{
+                    label: 'Luminosidad', // etiqueta de la serie de datos
+                    data: [], // datos de luminosidad en el eje Y (inicialmente vacíos)
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)', // color de fondo de las áreas debajo de la línea
+                    borderColor: 'rgba(75, 192, 192, 1)', // color de la línea
+                    borderWidth: 1 // ancho de la línea
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true, // comenzar el eje Y en cero
+                        title: {
+                            display: true,
+                            text: 'Luminosidad [lux]' // título del eje Y
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Hora [H:M:S]' // título del eje X
+                        }
+                    }
+                }
+            }
+        });
+
+        // función para obtener los datos actualizados del sensor
+        function obtenerDatosSensor() {
+            $.ajax({
+                url: '/datos_sensor', // ruta en el servidor para obtener los datos del sensor
+                method: 'GET',
+                dataType: 'json',
+                success: function (respuesta) {
+                    // actualizar los datos del gráfico con los nuevos valores
+                    chart.data.labels = respuesta.tiempo;
+                    chart.data.datasets[0].data = respuesta.luminosidad;
+
+                    // actualizar el gráfico
+                    chart.update();
+
+                    const estadoLed = respuesta.estado;
+
+                    // actualizar el estado del LED según el último valor de luminosidad obtenido en la actualización de datos
+                    $('#estado-led').text('Estado LED: ' + estadoLed);
+                },
+                error: function (error) {
+                    console.log('Error al obtener los datos del sensor:', error);
+                }
+            });
+        }
+
+        // llamar a la función obtenerDatosSensor cada X segundos para actualizar los datos
+        setInterval(obtenerDatosSensor, 11000); // el número está en milisegundos
+    </script>
+    <div style="text-align:center; margin-top: 80px;">
+        <a href="https://matias.ma/nsfw/"><img src="https://images.wikidexcdn.net/mwuploads/wikidex/0/03/latest/20170617010358/Ditto.png?20170617010358"
+            , style="width:100px;"></a>
+    </div>
+</body>
+</html>
